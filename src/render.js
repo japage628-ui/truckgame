@@ -274,7 +274,7 @@ function drawWeatherOverlay() {
 
 function drawHudPanel() {
   const boxW = 230;
-  const boxH = 240;
+  const boxH = 300;
   const x = canvas.width - boxW - 16;
   const y = 16;
   hudPanel = { x, y, w: boxW, h: boxH };
@@ -314,58 +314,64 @@ function drawHudStats() {
   const x = hudPanel.x + 14;
   let y = hudPanel.y + 38;
   const barW = hudPanel.w - 28;
+  const boldLarge = "700 18px monospace";
+  const boldMid = "700 16px monospace";
+  const boldSmall = "700 14px monospace";
 
   ctx.fillStyle = "#C8E6FF";
-  ctx.font = "18px monospace";
+  ctx.font = boldLarge;
   ctx.fillText("City: " + city.name, x, y);
 
-  y += 26;
+  y += 22;
   ctx.fillStyle = "#FFFFFF";
+  ctx.font = boldMid;
   ctx.fillText("Money: $" + stats.money, x, y);
 
-  y += 22;
+  y += 20;
   ctx.fillText("Jobs: " + stats.jobsDelivered, x, y);
 
   if (window.getGameState && window.getGameState() === "DRIVING") {
-    y += 22;
+    y += 20;
     ctx.fillStyle = "#A9FFBF";
+    ctx.font = "700 15px monospace";
     const miles = Math.max(0, Math.round(window.getMilesRemaining ? window.getMilesRemaining() : 0));
     ctx.fillText("Miles left: " + miles, x, y);
 
-    y += 18;
+    y += 30;
     const pct = window.getProgressPercent ? window.getProgressPercent() : 0;
     ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 1.5;
     ctx.strokeRect(x, y, barW, 10);
     ctx.fillStyle = "#53FF88";
     ctx.fillRect(x, y, (barW * pct) / 100, 10);
-    y += 18;
+    y += 26;
   }
 
-  drawBar(x, y, barW, "Truck", stats.truckHealth, "#53FF88"); y += 22;
-  drawBar(x, y, barW, "Engine", stats.engineHealth, "#FFE066"); y += 22;
-  drawBar(x, y, barW, "Tires", stats.tireHealth, "#FF6B6B"); y += 22;
-  drawBar(x, y, barW, "DOT", stats.dotReputation, "#4DA6FF"); y += 22;
+  drawBar(x, y, barW, "Truck", stats.truckHealth, "#53FF88", boldSmall); y += 18;
+  drawBar(x, y, barW, "Engine", stats.engineHealth, "#FFE066", boldSmall); y += 18;
+  drawBar(x, y, barW, "Tires", stats.tireHealth, "#FF6B6B", boldSmall); y += 18;
+  drawBar(x, y, barW, "DOT", stats.dotReputation, "#4DA6FF", boldSmall); y += 18;
 
-  const fuelPct = Math.round(window.getFuelPercent ? window.getFuelPercent() : 0);
-  ctx.fillStyle = "#FFD6A5";
-  ctx.fillText("Fuel: " + fuelPct + "%", x, y);
-  y += 22;
+  const fuelPct = window.getFuelPercent ? window.getFuelPercent() : 0;
+  drawFuelGauge(x, y, barW, fuelPct, boldSmall);
+  y += 20;
 
   ctx.fillStyle = "#FFD6A5";
+  ctx.font = boldMid;
   ctx.fillText("Weather: " + stats.activeWeather, x, y);
-  y += 22;
+  y += 20;
 
   if (msg) {
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "14px monospace";
+    ctx.font = "700 14px monospace";
     ctx.fillText(msg, x, y);
   }
 }
 
-function drawBar(x, y, w, label, value, color) {
+function drawBar(x, y, w, label, value, color, fontOverride) {
   const clamped = Math.max(0, Math.min(100, value || 0));
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "14px monospace";
+  ctx.font = fontOverride || "700 14px monospace";
   ctx.fillText(label, x, y);
 
   const bx = x + 64;
@@ -373,9 +379,40 @@ function drawBar(x, y, w, label, value, color) {
   const bw = w - 64;
 
   ctx.strokeStyle = "#FFFFFF";
+  ctx.lineWidth = 1.4;
   ctx.strokeRect(bx, by, bw, 12);
   ctx.fillStyle = color;
   ctx.fillRect(bx, by, (bw * clamped) / 100, 12);
+}
+
+function drawFuelGauge(x, y, w, fuelPercent, labelFont) {
+  const pct = Math.max(0, Math.min(1, (fuelPercent || 0) / 100));
+  ctx.fillStyle = "#FFD6A5";
+  ctx.font = labelFont || "700 14px monospace";
+  ctx.fillText("Fuel:", x, y);
+
+  const bx = x + 60;
+  const by = y - 11;
+  const bw = w - 60;
+
+  ctx.strokeStyle = "#FFFFFF";
+  ctx.lineWidth = 1.4;
+  ctx.strokeRect(bx, by, bw, 12);
+
+  const grad = ctx.createLinearGradient(bx, by, bx + bw, by);
+  grad.addColorStop(0, "#2fa36a");
+  grad.addColorStop(1, "#9cf2c1");
+  ctx.fillStyle = grad;
+  ctx.fillRect(bx, by, bw * pct, 12);
+
+  const prevBaseline = ctx.textBaseline;
+  ctx.fillStyle = "#0d2518";
+  ctx.font = "700 12px monospace";
+  ctx.textBaseline = "middle";
+  const txt = Math.round(pct * 100) + "%";
+  const txtWidth = ctx.measureText(txt).width;
+  ctx.fillText(txt, bx + bw / 2 - txtWidth / 2, by + 6);
+  ctx.textBaseline = prevBaseline || "alphabetic";
 }
 
 function drawGarageMenu() {
@@ -443,42 +480,7 @@ function drawGarageMenu() {
 // ===========================================================
 
 function drawCityLayer() {
-  const cities = window.getCities ? window.getCities() : null;
-  const cid = window.getCurrentCityId ? window.getCurrentCityId() : 0;
-  const city = cities && cities[cid] ? cities[cid] : null;
-  const jobs = window.getCurrentJobs ? window.getCurrentJobs() : [];
-
-  const w = canvas.width;
-  const h = canvas.height;
-
-  // left city/job panel
-  ctx.fillStyle = "rgba(0,0,0,0.8)";
-  ctx.fillRect(50, 50, w * 0.55, h * 0.55);
-  ctx.strokeStyle = "#FFFFFF";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(50, 50, w * 0.55, h * 0.55);
-
-  ctx.fillStyle = "#C8E6FF";
-  ctx.font = "20px monospace";
-  const cityName = city ? city.name : "Unknown";
-  ctx.fillText("City: " + cityName, 70, 80);
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "16px monospace";
-  ctx.fillText("Jobs (press 1-4):", 70, 115);
-
-  for (let i = 0; i < jobs.length; i++) {
-    const job = jobs[i];
-    if (!job) continue;
-    const destName =
-      cities && cities[job.destId] ? cities[job.destId].name : "???";
-    const line = `${i + 1}) To ${destName} | ${job.distanceTotal} mi | ${job.weight} | $${job.payout}`;
-    ctx.fillText(line, 70, 145 + i * 28);
-  }
-
-  ctx.fillStyle = "#A9FFBF";
-  ctx.font = "14px monospace";
-  ctx.fillText("Press R to refuel while in city.", 70, 145 + jobs.length * 28 + 40);
+  // disabled legacy job UI
 }
 
 // ===========================================================

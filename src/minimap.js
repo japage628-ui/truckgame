@@ -1,19 +1,35 @@
 // minimap.js - lightweight mini-map overlay for truck position
 
 (function () {
-  const svg = document.getElementById("mini-map-svg");
-  const dot = document.getElementById("mini-map-dot");
+  function init() {
+    const canvas = document.getElementById("mini-map-canvas");
+    if (!canvas) {
+      return false;
+    }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.warn("[MINIMAP] Canvas context missing; minimap disabled.");
+      return true;
+    }
 
-  if (!svg || !dot) {
-    console.warn("[MINIMAP] SVG elements missing; minimap disabled.");
-    return;
-  }
-
-  const viewBox = svg.viewBox.baseVal;
   const MIN_LON = -125;
   const MAX_LON = -66;
   const MIN_LAT = 24;
   const MAX_LAT = 50;
+  let mapReady = false;
+  const mapImg = new Image();
+  mapImg.onload = () => {
+    mapReady = true;
+    redraw();
+  };
+  mapImg.onerror = () => {
+    mapReady = false;
+    redraw();
+  };
+  mapImg.src = "assets/icons/usa_map.png";
+
+  let lastLat = null;
+  let lastLon = null;
 
   function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
@@ -23,30 +39,83 @@
     const xNorm = (clamp(lon, MIN_LON, MAX_LON) - MIN_LON) / (MAX_LON - MIN_LON);
     const yNorm = (clamp(lat, MIN_LAT, MAX_LAT) - MIN_LAT) / (MAX_LAT - MIN_LAT);
 
-    const x = viewBox.x + xNorm * viewBox.width;
-    // Invert Y so north is up
-    const y = viewBox.y + (1 - yNorm) * viewBox.height;
+    const x = xNorm * canvas.width;
+    const y = (1 - yNorm) * canvas.height;
 
     return { x, y };
   }
 
-  function setDotPosition(lat, lon) {
-    const pos = project(lat, lon);
-    dot.setAttribute("cx", pos.x.toFixed(2));
-    dot.setAttribute("cy", pos.y.toFixed(2));
+  function drawPlaceholder() {
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = "700 14px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("USA MAP", canvas.width / 2, canvas.height / 2);
+  }
+
+  function drawMapBase() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (mapReady) {
+      const scale = Math.min(canvas.width / mapImg.width, canvas.height / mapImg.height);
+      const drawW = mapImg.width * scale;
+      const drawH = mapImg.height * scale;
+      const dx = (canvas.width - drawW) / 2;
+      const dy = (canvas.height - drawH) / 2;
+      ctx.globalAlpha = 0.9;
+      ctx.drawImage(mapImg, dx, dy, drawW, drawH);
+      ctx.globalAlpha = 1;
+    } else {
+      drawPlaceholder();
+    }
+  }
+
+  function drawDot() {
+    if (lastLat == null || lastLon == null) return;
+    const pos = project(lastLat, lastLon);
+    ctx.save();
+    ctx.fillStyle = "#2fa36a";
+    ctx.strokeStyle = "rgba(0,0,0,0.65)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function redraw() {
+    drawMapBase();
+    drawDot();
   }
 
   window.updateMiniMap = function updateMiniMap(lat, lon) {
     if (typeof lat !== "number" || typeof lon !== "number") return;
-    setDotPosition(lat, lon);
+    lastLat = lat;
+    lastLon = lon;
+    redraw();
   };
 
-  // Initialize with current city if available
-  if (typeof window.getCities === "function" && typeof window.getCurrentCityId === "function") {
-    const cities = window.getCities();
-    const cid = window.getCurrentCityId();
-    if (cities && cities[cid]) {
-      setDotPosition(cities[cid].lat, cities[cid].lon);
+    // Initialize with current city if available
+    if (typeof window.getCities === "function" && typeof window.getCurrentCityId === "function") {
+      const cities = window.getCities();
+      const cid = window.getCurrentCityId();
+      if (cities && cities[cid]) {
+        lastLat = cities[cid].lat;
+        lastLon = cities[cid].lon;
+        redraw();
+      }
     }
+    return true;
+  }
+
+  if (!init()) {
+    window.addEventListener("templates:loaded", () => {
+      init();
+    }, { once: true });
   }
 })();

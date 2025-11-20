@@ -19,6 +19,13 @@ const EVENT_CHANCE = {
   bonus: 0.07
 };
 
+function durabilityMitigation() {
+  const ups = window.getUpgrades?.();
+  const level = ups?.truck || 1;
+  const mult = 1 - level * 0.10;
+  return Math.max(0, mult);
+}
+
 window.updateEvents = function(dt){
   if (window.getGameState() !== "DRIVING") return;
 
@@ -28,6 +35,11 @@ window.updateEvents = function(dt){
     nextEventIn = rand(15,25);
     triggerRandomEvent();
   }
+};
+
+window.resetEventTimer = function () {
+  eventTimer = 0;
+  nextEventIn = rand(15,25);
 };
 
 function triggerRandomEvent(){
@@ -45,7 +57,7 @@ function triggerDOT(){
     if (typeof window.__setGameStateFromDot === "function") {
       window.__setGameStateFromDot("CITY");
     }
-    window.startDotWheel();
+    setTimeout(() => window.startDotWheel(), 0);
   }
 }
 
@@ -53,18 +65,20 @@ function triggerDOT(){
 function triggerBreak(){
   const s = window.getPlayerStats();
   const dmg = rand(5,15)|0;
-  s.engineHealth = Math.max(0, s.engineHealth - dmg);
-  s.money -= dmg*10;
-  window.setMessage(`Engine hiccup -${dmg}%`,3);
+  const applied = Math.max(1, Math.round(dmg * durabilityMitigation()));
+  s.engineHealth = Math.max(0, s.engineHealth - applied);
+  s.money -= applied*10;
+  window.setMessage(`Engine hiccup -${applied}%`,3);
 }
 
 // tire
 function triggerTire(){
   const s = window.getPlayerStats();
   const dmg = rand(8,20)|0;
-  s.tireHealth = Math.max(0, s.tireHealth - dmg);
-  s.money -= dmg*7;
-  window.setMessage(`Tire damage -${dmg}%`,3);
+  const applied = Math.max(1, Math.round(dmg * durabilityMitigation()));
+  s.tireHealth = Math.max(0, s.tireHealth - applied);
+  s.money -= applied*7;
+  window.setMessage(`Tire damage -${applied}%`,3);
 }
 
 // weather shift
@@ -84,55 +98,4 @@ function triggerBonus(){
 }
 
 // ------------------------------------------
-// Mobile touch controls -> synthetic keys
-// ------------------------------------------
-(function setupMobileTouchControls() {
-  const container = document.getElementById("mobile-controls");
-  if (!container) return;
-  const buttons = container.querySelectorAll("button[data-key]");
-  if (!buttons.length) return;
-
-  const activeKeys = new Set();
-
-  const sendKeyEvent = (type, key) => {
-    const evt = new KeyboardEvent(type, { key, bubbles: true });
-    window.dispatchEvent(evt);
-  };
-
-  const handleDown = (key, btn) => {
-    if (activeKeys.has(key)) return;
-    activeKeys.add(key);
-    btn.classList.add("pressed");
-    sendKeyEvent("keydown", key);
-  };
-
-  const handleUp = (key, btn) => {
-    if (!activeKeys.has(key)) return;
-    activeKeys.delete(key);
-    btn.classList.remove("pressed");
-    sendKeyEvent("keyup", key);
-  };
-
-  buttons.forEach((btn) => {
-    const key = btn.getAttribute("data-key");
-    if (!key) return;
-
-    btn.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      handleDown(key, btn);
-    });
-
-    ["pointerup", "pointerleave", "pointercancel"].forEach((type) => {
-      btn.addEventListener(type, (e) => {
-        e.preventDefault();
-        handleUp(key, btn);
-      });
-    });
-  });
-
-  window.addEventListener("blur", () => {
-    activeKeys.forEach((key) => sendKeyEvent("keyup", key));
-    activeKeys.clear();
-    buttons.forEach((btn) => btn.classList.remove("pressed"));
-  });
-})();
+// (mobile touch buttons removed)

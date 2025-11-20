@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -7,339 +7,89 @@
   <title>Truck Game</title>
   <link rel="manifest" href="manifest.json" />
 
-  <style>
-    :root {
-      --control-bg: rgba(0, 0, 0, 0.72);
-      --control-border: #444;
-      --control-text: #fff;
-      --control-active: #2fa36a;
-    }
-
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-    }
-
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-      font-family: monospace;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .game-shell {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #000;
-    }
-
-    canvas {
-      display: block;
-      background: #000;
-      max-width: 100vw;
-      max-height: 100vh;
-    }
-
-    #mobile-controls {
-      position: absolute;
-      inset: auto 0 0 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 10px;
-      padding: 10px 12px calc(18px + env(safe-area-inset-bottom, 12px)) 12px;
-      box-sizing: border-box;
-      pointer-events: none;
-      z-index: 18;
-    }
-
-    .mobile-row {
-      display: flex;
-      gap: 10px;
-      pointer-events: auto;
-    }
-
-    .mobile-btn {
-      min-width: 110px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: var(--control-bg);
-      color: var(--control-text);
-      border: 1px solid var(--control-border);
-      font-family: monospace;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      backdrop-filter: blur(4px);
-      touch-action: manipulation;
-    }
-
-    .mobile-btn:active,
-    .mobile-btn.pressed {
-      background: var(--control-active);
-      color: #000;
-      border-color: #3dd185;
-    }
-
-    @media (pointer: fine) {
-      #mobile-controls {
-        display: none;
-      }
-    }
-
-    /* Mini-map overlay */
-    #mini-map-container {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      width: 150px;
-      padding: 8px;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 8px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-      pointer-events: none;
-      z-index: 20;
-    }
-
-    #mini-map-svg {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    #mini-map-outline {
-      fill: rgba(255, 255, 255, 0.08);
-      stroke: rgba(255, 255, 255, 0.45);
-      stroke-width: 1.8;
-      stroke-linejoin: round;
-    }
-
-    #mini-map-dot {
-      fill: #2fa36a;
-      stroke: rgba(0, 0, 0, 0.6);
-      stroke-width: 1.5;
-      filter: drop-shadow(0 0 4px rgba(47, 163, 106, 0.8));
-    }
-
-
-    /* ==========================================
-       DOT WHEEL OVERLAY - HIGH TECH HUD
-    ========================================== */
-
-    #dot-wheel-overlay {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle at center, rgba(0, 255, 255, 0.18), rgba(0,0,0,0.9));
-      z-index: 50;
-      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-    }
-
-    #dot-wheel-overlay.dot-hidden {
-      pointer-events: none;
-      opacity: 0;
-      transform: translateY(-12px);
-    }
-
-    .dot-panel {
-      width: min(720px, 95vw);
-      padding: 18px 20px 20px;
-      border-radius: 14px;
-      background: radial-gradient(circle at top, #092432 0, #02050a 55%, #000 100%);
-      border: 1px solid rgba(0, 255, 255, 0.4);
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.45);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .dot-panel::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(to bottom, rgba(0,255,255,0.08), transparent 40%),
-        linear-gradient(120deg, rgba(0,255,255,0.07), transparent 65%);
-      mix-blend-mode: screen;
-      pointer-events: none;
-    }
-
-    .dot-police-lights {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 0 4px;
-      position: relative;
-      z-index: 2;
-    }
-
-    .dot-light {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-      box-shadow: 0 0 12px currentColor;
-      animation: dot-light-pulse 1s infinite alternate;
-    }
-
-    .dot-light.red {
-      color: #ff4b4b;
-      background: #ff4b4b;
-      animation-delay: 0s;
-    }
-
-    .dot-light.blue {
-      color: #4bb0ff;
-      background: #4bb0ff;
-      animation-delay: 0.5s;
-    }
-
-    @keyframes dot-light-pulse {
-      from { opacity: 0.5; transform: translateY(0); }
-      to   { opacity: 1;   transform: translateY(-2px); }
-    }
-
-    .dot-header {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      border-bottom: 1px solid rgba(0, 255, 255, 0.3);
-      padding-bottom: 6px;
-    }
-
-    .dot-title {
-      font-size: 16px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #7dfff7;
-    }
-
-    .dot-sub {
-      font-size: 11px;
-      color: #84b7ff;
-      opacity: 0.9;
-    }
-
-    .dot-content {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    #dot-wheel-canvas {
-      width: 260px;
-      height: 260px;
-      max-width: 45vw;
-      max-height: 45vw;
-      background: radial-gradient(circle at center, #021018 0, #000 70%);
-      border-radius: 50%;
-      border: 1px solid rgba(0,255,255,0.4);
-      box-shadow: 0 0 22px rgba(0,255,255,0.5);
-    }
-
-    .dot-info {
-      min-width: 220px;
-      max-width: 320px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      color: #cfe9ff;
-      font-size: 13px;
-    }
-
-    #dot-result-line {
-      min-height: 46px;
-      line-height: 1.3;
-    }
-
-    #dot-spin-btn {
-      align-self: flex-start;
-      padding: 10px 22px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,255,255,0.8);
-      background: radial-gradient(circle at top, #0ff 0, #007a7a 55%, #003b3b 100%);
-      color: #001014;
-      font-family: monospace;
-      font-size: 14px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      cursor: pointer;
-      box-shadow: 0 0 16px rgba(0,255,255,0.75);
-      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, filter 0.08s;
-    }
-
-    #dot-spin-btn:active {
-      transform: scale(0.96);
-      box-shadow: 0 0 6px rgba(0,255,255,0.55);
-      filter: brightness(0.9);
-    }
-
-    @media (max-width: 640px) {
-      .dot-panel {
-        padding: 14px 12px 14px;
-      }
-      .dot-title {
-        font-size: 14px;
-      }
-      #dot-wheel-canvas {
-        width: 220px;
-        height: 220px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="src/styles.css">
 </head>
 
 <body>
+
+  <div id="start-screen-container"></div>
 
   <div class="game-shell">
     <!-- The main game canvas -->
     <canvas id="game" width="960" height="540"></canvas>
 
-    <div id="mobile-controls" aria-label="Mobile controls">
-      <div class="mobile-row">
-        <button class="mobile-btn" data-key="Enter" aria-label="Start game">Start</button>
-        <button class="mobile-btn" data-key="r" aria-label="Refuel in city">Refuel</button>
-        <button class="mobile-btn" data-key="g" aria-label="Open garage">Garage</button>
-      </div>
-      <div class="mobile-row">
-        <button class="mobile-btn" data-key="1" aria-label="Select job 1">Job 1</button>
-        <button class="mobile-btn" data-key="2" aria-label="Select job 2">Job 2</button>
-        <button class="mobile-btn" data-key="3" aria-label="Select job 3">Job 3</button>
-        <button class="mobile-btn" data-key="4" aria-label="Select job 4">Job 4</button>
+    <div id="hud-container"></div>
+    <div id="mobile-ui-container"></div>
+    <div id="job_board_container"></div>
+
+    <div id="minimap-container"></div>
+
+  </div>
+
+  <!-- Main Menu Overlay -->
+  <div id="main-menu-overlay" class="menu-overlay visible" aria-label="Main menu">
+    <div class="menu-card">
+      <div class="menu-title">TRUCK GAME</div>
+      <div class="menu-buttons">
+        <button id="btn-new-game" class="menu-btn" type="button">New Game</button>
+        <button id="btn-load-game" class="menu-btn" type="button">Load Game</button>
+        <button id="btn-settings" class="menu-btn" type="button">Settings</button>
+        <button id="btn-credits" class="menu-btn" type="button">Credits</button>
       </div>
     </div>
+  </div>
 
-    <div id="mini-map-container" aria-label="Mini map">
-      <svg id="mini-map-svg" viewBox="0 0 200 120" role="img" aria-label="United States outline">
-        <path id="mini-map-outline" d="M14 76 L22 52 L40 38 L70 32 L100 24 L128 32 L150 38 L170 36 L186 52 L182 70 L164 82 L140 84 L114 78 L90 88 L62 92 L40 90 L22 84 Z" />
-        <circle id="mini-map-dot" cx="100" cy="60" r="4" />
-      </svg>
+  <!-- Load Menu Overlay -->
+  <div id="load-menu-overlay" class="menu-overlay" aria-label="Load game menu">
+    <div class="menu-card">
+      <div class="menu-title">Load Game</div>
+      <div class="slot-list" id="slot-list"></div>
+      <div class="menu-footer">
+        <button id="btn-load-back" class="ghost-btn" type="button">Back</button>
+      </div>
     </div>
+  </div>
 
+  <!-- Settings Overlay -->
+  <div id="settings-overlay" class="menu-overlay" aria-label="Settings">
+    <div class="menu-card">
+      <div class="menu-title">Settings</div>
+      <div class="settings-row">
+        <label for="slider-master">Master Volume</label>
+        <input id="slider-master" type="range" min="0" max="100" step="1" />
+      </div>
+      <div class="settings-row">
+        <label for="slider-sfx">SFX Volume</label>
+        <input id="slider-sfx" type="range" min="0" max="100" step="1" />
+      </div>
+      <div class="settings-row">
+        <label for="slider-music">Music Volume</label>
+        <input id="slider-music" type="range" min="0" max="100" step="1" />
+      </div>
+      <div class="menu-footer">
+        <button id="btn-settings-back" class="ghost-btn" type="button">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credits Overlay -->
+  <div id="credits-overlay" class="menu-overlay" aria-label="Credits">
+    <div class="menu-card">
+      <div class="menu-title">Credits</div>
+      <div style="font-size:14px; line-height:1.5; color:#cfe9ff;">
+        <div><strong>Design & Code:</strong> Truck Game Team</div>
+        <div><strong>Art & Audio:</strong> Placeholder Crew</div>
+        <div><strong>Special Thanks:</strong> Drivers everywhere</div>
+      </div>
+      <div class="menu-footer">
+        <button id="btn-credits-back" class="ghost-btn" type="button">Back</button>
+      </div>
+    </div>
   </div>
 
   <div id="dot-wheel-overlay" class="dot-hidden">
     <div class="dot-panel">
+      <button id="dot-close-btn" type="button" aria-label="Close DOT wheel" style="position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:6px; border:1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.65); color:#fff; cursor:pointer; font-family: monospace; font-weight:700;">X</button>
       <div class="dot-police-lights" aria-hidden="true">
         <div class="dot-light red"></div>
         <div class="dot-light blue"></div>
@@ -353,12 +103,20 @@
         <div class="dot-info">
           <div id="dot-result-line">
             Press SPIN to begin automated inspection...
-          </div>
-          <button id="dot-spin-btn">SPIN</button>
+        </div>
+        <button id="dot-spin-btn">SPIN</button>
+        <div id="dot-reward-popup" style="display:none; margin-top:8px;">
+          <div id="dot-reward-text" style="margin-bottom:6px;">You won: </div>
+          <button id="dot-collect-btn" type="button">Collect</button>
         </div>
       </div>
     </div>
   </div>
+
+  <div id="challenges-container"></div>
+
+  <script src="src/load_templates.js"></script>
+  <script src="src/index_logic.js"></script>
 
   <!-- ========================================================= -->
   <!--  LOAD ORDER (DO NOT TOUCH unless we update engine again) -->
@@ -369,6 +127,9 @@
 
   <!-- 2. World map logic (city coordinates, region assignment) -->
   <script src="src/worldmap.js"></script>
+
+  <!-- 2.4 Challenges -->
+  <script src="src/challenges.js"></script>
 
   <!-- 2.5 Background metadata -->
   <script src="src/backgrounds.js"></script>
@@ -390,6 +151,8 @@
 
   <!-- 6. Render pipeline (sky, road, truck, mountains, weather graphics) -->
   <script src="src/render.js"></script>
+
+  <script src="src/main_menu.js"></script>
 
   <!-- 7. Mini map overlay -->
   <script src="src/minimap.js"></script>

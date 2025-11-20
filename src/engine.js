@@ -13,6 +13,7 @@ window.__setGameStateFromDot = (state) => {
 
 const cities = window.GameData.cities;
 let currentCityId = 0;
+let tripOriginCityId = 0;
 window.getCities = () => cities;
 window.getCurrentCityId = () => currentCityId;
 window.setCurrentCity = (id) => {
@@ -57,7 +58,39 @@ let upgrades = {
   safety: 1,
   comfort: 1
 };
+const UPGRADE_STORAGE_KEY = "truckgame_upgrades_v1";
 window.getUpgrades = () => upgrades;
+
+function loadUpgradesFromStorage() {
+  try {
+    const raw = localStorage.getItem(UPGRADE_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return;
+    Object.keys(upgrades).forEach((key) => {
+      const val = Number(parsed[key]);
+      if (Number.isFinite(val) && val >= 1) {
+        upgrades[key] = val;
+      }
+    });
+  } catch (e) {
+    console.warn("[Upgrades] load failed", e);
+  }
+}
+
+function saveUpgrades() {
+  try {
+    localStorage.setItem(UPGRADE_STORAGE_KEY, JSON.stringify(upgrades));
+  } catch (e) {
+    console.warn("[Upgrades] save failed", e);
+  }
+}
+
+function applyUpgradeEffects() {
+  stats.fuel = Math.min(stats.fuel, getTankCapacity());
+}
+
+loadUpgradesFromStorage();
 
 window.purchaseUpgrade = (name) => {
   if (gameState !== "CITY") {
@@ -83,6 +116,8 @@ window.purchaseUpgrade = (name) => {
 
   stats.money -= cost;
   upgrades[name] = current + 1;
+  applyUpgradeEffects();
+  saveUpgrades();
   setMessage(name + " upgraded to L" + upgrades[name], 2.5);
   return { ok: true };
 };
@@ -101,12 +136,17 @@ window.setMessage = setMessage;
 
 // ---------------- FUEL SYSTEM ----------------
 function getTankCapacity() {
-  return 120 + (upgrades.tank - 1) * 20;
+  const baseMaxFuel = 120;
+  const level = upgrades.tank || 0;
+  return baseMaxFuel * (1 + level * 0.15);
 }
 
 window.getFuelPercent = () => {
   return Math.max(0, (stats.fuel / getTankCapacity()) * 100);
 };
+
+applyUpgradeEffects();
+saveUpgrades();
 
 // ---------------- JOB SYSTEM ----------------
 let activeJob = null;
@@ -141,10 +181,12 @@ function makeJobsForCity(cityId) {
 
 let cachedJobs = makeJobsForCity(currentCityId);
 syncMiniMapToCity();
+let __lastMoneyForChallenges = stats.money;
 
 window.getCurrentJobs = () => cachedJobs;
 
 window.startJob = (job) => {
+  tripOriginCityId = currentCityId;
   activeJob = job;
   jobRemaining = job.distanceTotal;
   stats.activeWeather = "clear";
@@ -153,6 +195,17 @@ window.startJob = (job) => {
   setMessage("Hauling to " + destName, 3);
   gameState = "DRIVING";
   syncMiniMapToCity();
+  window.__dotViolationThisJob = false;
+  if (typeof window.resetEventTimer === "function") {
+    window.resetEventTimer();
+  }
+};
+
+window.__returnToMainMenu = () => {
+  activeJob = null;
+  jobRemaining = 0;
+  gameState = "START";
+  setMessage("Welcome back!", 2);
 };
 
 // ---------------- DRIVING UPDATE ----------------
@@ -161,11 +214,15 @@ function handleDriving(dt) {
 
   // speed based on upgrades
   const baseSpeed = window.GameData.baseSpeed;
-  const mph = baseSpeed * (1 + (upgrades.engine - 1) * 0.05);
+  const engineLevel = upgrades.engine || 0;
+  const mph = baseSpeed * (1 + engineLevel * 0.10);
 
   // movement
   jobRemaining -= mph * dt;
   worldScroll += mph * dt;
+  if (typeof window.Challenges?.recordMiles === "function") {
+    window.Challenges.recordMiles(mph * dt);
+  }
 
   // fuel usage
   stats.fuel -= (mph * dt) * 0.04;
@@ -173,7 +230,21 @@ function handleDriving(dt) {
 
   // if out of fuel -> stop truck
   if (stats.fuel <= 0) {
-    setMessage("Out of fuel! Press R in a city to refuel.", 4);
+    const roadsideCost = 250;
+    if (stats.money >= roadsideCost) {
+      stats.money -= roadsideCost;
+      stats.fuel = getTankCapacity() * 0.25;
+      setMessage("Roadside service: refueled (-$250)", 3);
+      return;
+    }
+    setMessage("Out of fuel - towed back.", 4);
+    stats.fuel = getTankCapacity() * 0.10;
+    activeJob = null;
+    jobRemaining = 0;
+    currentCityId = tripOriginCityId;
+    cachedJobs = makeJobsForCity(currentCityId);
+    syncMiniMapToCity();
+    window.__dotViolationThisJob = false;
     gameState = "CITY";
     return;
   }
@@ -182,6 +253,9 @@ function handleDriving(dt) {
   if (jobRemaining <= 0) {
     stats.money += activeJob.payout;
     stats.jobsDelivered++;
+    if (typeof window.Challenges?.recordJobComplete === "function") {
+      window.Challenges.recordJobComplete(!window.__dotViolationThisJob);
+    }
 
     setMessage("Delivered! +$" + activeJob.payout, 3);
 
@@ -189,6 +263,7 @@ function handleDriving(dt) {
     currentCityId = destId;
     cachedJobs = makeJobsForCity(destId);
     syncMiniMapToCity();
+    window.__dotViolationThisJob = false;
 
     activeJob = null;
     jobRemaining = 0;
@@ -198,6 +273,9 @@ function handleDriving(dt) {
 
 // ---------------- UPDATE LOOP ----------------
 function update(dt) {
+  if (typeof window.Challenges?.tickMoney === "function") {
+    window.Challenges.tickMoney();
+  }
   if (messageTimer > 0) {
     messageTimer -= dt;
     if (messageTimer <= 0) {
@@ -230,14 +308,6 @@ window.addEventListener("keydown", (e) => {
 
   // CITY MODE
   if (gameState === "CITY") {
-    // Select job 1-4
-    if (["1", "2", "3", "4"].includes(key)) {
-      const idx = Number(key) - 1;
-      const jobs = window.getCurrentJobs();
-      if (jobs[idx]) window.startJob(jobs[idx]);
-      return;
-    }
-
     // REFUEL
     if (key === "r") {
       if (stats.money >= 50) {
