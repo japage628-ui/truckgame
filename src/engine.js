@@ -5,6 +5,11 @@
 // ---------------- GAME STATE ----------------
 let gameState = "START";
 window.getGameState = () => gameState;
+window.__setGameStateFromDot = (state) => {
+  if (state === "DRIVING" || state === "CITY") {
+    gameState = state;
+  }
+};
 
 const cities = window.GameData.cities;
 let currentCityId = 0;
@@ -12,7 +17,15 @@ window.getCities = () => cities;
 window.getCurrentCityId = () => currentCityId;
 window.setCurrentCity = (id) => {
   if (id >= 0 && id < cities.length) currentCityId = id;
+  syncMiniMapToCity();
 };
+
+function syncMiniMapToCity() {
+  const city = cities && cities[currentCityId];
+  if (city && typeof window.updateMiniMap === "function") {
+    window.updateMiniMap(city.lat, city.lon);
+  }
+}
 
 // World scroll
 let worldScroll = 0;
@@ -127,6 +140,7 @@ function makeJobsForCity(cityId) {
 }
 
 let cachedJobs = makeJobsForCity(currentCityId);
+syncMiniMapToCity();
 
 window.getCurrentJobs = () => cachedJobs;
 
@@ -138,57 +152,8 @@ window.startJob = (job) => {
   const destName = dest ? dest.name : "Unknown";
   setMessage("Hauling to " + destName, 3);
   gameState = "DRIVING";
+  syncMiniMapToCity();
 };
-
-// ---------------- DOT MINI GAME ----------------
-let dotMini = { checks: [], index: 0, timer: 0, score: 0 };
-
-window.getDotMiniState = () => dotMini;
-
-window.startDotMinigame = () => {
-  dotMini = {
-    checks: [
-      { label: "Logs", key: "l" },
-      { label: "Tires", key: "t" },
-      { label: "Lights", key: "g" },
-      { label: "Brakes", key: "b" },
-      { label: "Paperwork", key: "p" },
-      { label: "Securement", key: "s" }
-    ],
-    index: 0,
-    timer: 6,
-    score: 0
-  };
-
-  setMessage("DOT inspection in progress...", 2);
-  gameState = "DOT_MINIGAME";
-};
-
-function dotMiniInput(key) {
-  const cur = dotMini.checks[dotMini.index];
-  if (!cur) return;
-
-  if (key === cur.key) dotMini.score++;
-  dotMini.index++;
-
-  if (dotMini.index >= dotMini.checks.length) {
-    finalizeDotMinigame();
-  }
-}
-
-function updateDotMinigame(dt) {
-  dotMini.timer -= dt;
-  if (dotMini.timer <= 0) finalizeDotMinigame();
-}
-
-function finalizeDotMinigame() {
-  const payout = dotMini.score * 25;
-  stats.money += payout;
-  stats.dotReputation = Math.min(100, stats.dotReputation + dotMini.score * 2);
-  setMessage(`DOT check done: +$${payout}`, 3);
-
-  gameState = activeJob ? "DRIVING" : "CITY";
-}
 
 // ---------------- DRIVING UPDATE ----------------
 function handleDriving(dt) {
@@ -223,6 +188,7 @@ function handleDriving(dt) {
     const destId = activeJob.destId;
     currentCityId = destId;
     cachedJobs = makeJobsForCity(destId);
+    syncMiniMapToCity();
 
     activeJob = null;
     jobRemaining = 0;
@@ -247,10 +213,6 @@ function update(dt) {
   if (typeof window.updateEvents === "function") {
     window.updateEvents(dt);
   }
-
-  if (gameState === "DOT_MINIGAME") {
-    updateDotMinigame(dt);
-  }
 }
 window.update = update;
 
@@ -263,12 +225,6 @@ window.addEventListener("keydown", (e) => {
   // START -> CITY
   if (gameState === "START") {
     gameState = "CITY";
-    return;
-  }
-
-  // DOT MINI
-  if (gameState === "DOT_MINIGAME") {
-    dotMiniInput(key);
     return;
   }
 

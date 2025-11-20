@@ -5,14 +5,14 @@
 console.log("%c[EVENTS] Loaded.","color:#7CF;");
 
 let eventTimer = 0;
-let nextEventIn = rand(4,8);
+let nextEventIn = rand(15,25);
 
 function rand(a,b){ return Math.random()*(b-a)+a;}
 function chance(p){ return Math.random()<p;}
 function pick(a){ return a[(Math.random()*a.length)|0];}
 
 const EVENT_CHANCE = {
-  dot: 0.25,
+  dot: 0.05,
   breakdown: 0.18,
   tire: 0.12,
   weather: 0.20,
@@ -25,7 +25,7 @@ window.updateEvents = function(dt){
   eventTimer += dt;
   if (eventTimer >= nextEventIn) {
     eventTimer = 0;
-    nextEventIn = rand(4,8);
+    nextEventIn = rand(15,25);
     triggerRandomEvent();
   }
 };
@@ -41,7 +41,12 @@ function triggerRandomEvent(){
 // DOT
 function triggerDOT(){
   window.setMessage("Random DOT check!",2);
-  window.startDotMinigame();
+  if (typeof window.startDotWheel === "function") {
+    if (typeof window.__setGameStateFromDot === "function") {
+      window.__setGameStateFromDot("CITY");
+    }
+    window.startDotWheel();
+  }
 }
 
 // breakdown
@@ -77,3 +82,55 @@ function triggerBonus(){
   s.money += amt;
   window.setMessage("Bonus: +$"+amt,3);
 }
+
+// ------------------------------------------
+// Mobile touch controls -> synthetic keys
+// ------------------------------------------
+(function setupMobileTouchControls() {
+  const buttons = document.querySelectorAll(".touch-controls button[data-key]");
+  if (!buttons.length) return;
+
+  const activeKeys = new Set();
+
+  const sendKeyEvent = (type, key) => {
+    const evt = new KeyboardEvent(type, { key, bubbles: true });
+    window.dispatchEvent(evt);
+  };
+
+  const handleDown = (key, btn) => {
+    if (activeKeys.has(key)) return;
+    activeKeys.add(key);
+    btn.classList.add("pressed");
+    sendKeyEvent("keydown", key);
+  };
+
+  const handleUp = (key, btn) => {
+    if (!activeKeys.has(key)) return;
+    activeKeys.delete(key);
+    btn.classList.remove("pressed");
+    sendKeyEvent("keyup", key);
+  };
+
+  buttons.forEach((btn) => {
+    const key = btn.getAttribute("data-key");
+    if (!key) return;
+
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      handleDown(key, btn);
+    });
+
+    ["pointerup", "pointerleave", "pointercancel"].forEach((type) => {
+      btn.addEventListener(type, (e) => {
+        e.preventDefault();
+        handleUp(key, btn);
+      });
+    });
+  });
+
+  window.addEventListener("blur", () => {
+    activeKeys.forEach((key) => sendKeyEvent("keyup", key));
+    activeKeys.clear();
+    buttons.forEach((btn) => btn.classList.remove("pressed"));
+  });
+})();

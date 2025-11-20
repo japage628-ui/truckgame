@@ -83,6 +83,9 @@ function gameLoop(ts) {
   if (typeof window.update === "function") {
     window.update(dt);
   }
+  if (typeof window.updateDotWheel === "function") {
+    window.updateDotWheel(dt);
+  }
 
   drawFrame();
   requestAnimationFrame(gameLoop);
@@ -105,8 +108,8 @@ function drawFrame() {
     drawCityLayer();
   }
 
-  // HUD is visible in CITY, DRIVING, DOT_MINIGAME
-  if (state === "CITY" || state === "DRIVING" || state === "DOT_MINIGAME") {
+  // HUD is visible in CITY and DRIVING
+  if (state === "CITY" || state === "DRIVING") {
     if (typeof drawHudPanel === "function") {
       drawHudPanel();
     }
@@ -118,9 +121,6 @@ function drawFrame() {
     }
   }
 
-  if (state === "DOT_MINIGAME") {
-    drawDotMinigameOverlay();
-  }
 }
 
 // ===========================================================
@@ -136,151 +136,21 @@ function drawWorldLayer() {
   const cities = window.getCities ? window.getCities() : null;
   const cityId = window.getCurrentCityId ? window.getCurrentCityId() : 0;
   const city = cities && cities[cityId] ? cities[cityId] : null;
-
   const region = city && city.region ? city.region : "plains";
   const scroll = window.getWorldScroll ? window.getWorldScroll() : 0;
+  const state = window.getGameState ? window.getGameState() : "START";
 
-  drawSky(region);
-  drawSun();
-  drawFarMountains(region, scroll);
-  drawMidHills(region, scroll);
-  drawCitySilhouette(region, scroll);
-  drawGround(region);
+  const driving = state === "DRIVING";
+  if (typeof window.drawBackgroundParallax === "function") {
+    window.drawBackgroundParallax(ctx, canvas, region, scroll, driving);
+  }
+
+  drawWeatherOverlay();
   drawRoad();
   drawTruck();
-  drawWeatherOverlay();
-}
-
-// --- Sky / sun ----------------------------------------------------
-
-function drawSky(region) {
-  const w = canvas.width;
-  const h = canvas.height;
-
-  const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, "#111524");
-  sky.addColorStop(0.4, "#1f3052");
-  sky.addColorStop(1, "#d0d9ec");
-
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, w, h);
-}
-
-function drawSun() {
-  const w = canvas.width;
-  const h = canvas.height;
-  const t = performance.now() / 1000;
-  const y = h * 0.2 + Math.sin(t * 0.2) * 6;
-
-  ctx.beginPath();
-  ctx.arc(w * 0.15, y, 18, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffe9b0";
-  ctx.fill();
 }
 
 // --- Parallax background ------------------------------------------
-
-function drawFarMountains(region, scroll) {
-  const w = canvas.width;
-  const h = canvas.height;
-
-  const baseY = h * 0.65;
-  const segW = 260;
-  const s = scroll * 0.12;
-  const offset = -((s % segW) + segW);
-
-  const colors = {
-    desert: "#3b2b21",
-    coast: "#283450",
-    plains: "#233042",
-    hills: "#233542"
-  };
-
-  ctx.fillStyle = colors[region] || "#233042";
-
-  for (let x = offset; x < w + segW; x += segW) {
-    ctx.beginPath();
-    ctx.moveTo(x, baseY);
-    ctx.lineTo(x + segW * 0.2, baseY - 55);
-    ctx.lineTo(x + segW * 0.45, baseY - 90);
-    ctx.lineTo(x + segW * 0.7, baseY - 60);
-    ctx.lineTo(x + segW, baseY);
-    ctx.fill();
-  }
-}
-
-function drawMidHills(region, scroll) {
-  const w = canvas.width;
-  const h = canvas.height;
-
-  const baseY = h * 0.74;
-  const segW = 190;
-
-  const s = scroll * 0.3;
-  const offset = -((s % segW) + segW);
-
-  const colors = {
-    desert: "#6a472c",
-    plains: "#3f6236",
-    hills: "#35523c",
-    coast: "#3b5566"
-  };
-
-  ctx.fillStyle = colors[region] || "#35523c";
-
-  for (let x = offset; x < w + segW; x += segW) {
-    ctx.beginPath();
-    ctx.moveTo(x, baseY);
-    ctx.quadraticCurveTo(x + segW * 0.2, baseY - 20, x + segW * 0.5, baseY - 5);
-    ctx.quadraticCurveTo(x + segW * 0.8, baseY + 10, x + segW, baseY);
-    ctx.fill();
-  }
-}
-
-function drawCitySilhouette(region, scroll) {
-  const w = canvas.width;
-  const h = canvas.height;
-  const baseY = h * 0.72;
-  const segW = 140;
-  const parallax = 0.5;
-  const offset = -((scroll * parallax) % segW);
-
-  const regionTones = {
-    desert: ["#3b2b21", "#4a3427"],
-    plains: ["#24313f", "#2d3a4a"],
-    coast: ["#1e2a44", "#25344f"],
-    hills: ["#243542", "#2c4350"]
-  };
-  const tones = regionTones[region] || regionTones.plains;
-
-  ctx.fillStyle = tones[0];
-  for (let x = offset - segW; x < w + segW; x += segW) {
-    const towerH = 40 + (x % 3) * 12;
-    const towerW = segW * 0.6;
-    ctx.fillRect(x, baseY - towerH, towerW, towerH);
-
-    ctx.fillStyle = tones[1];
-    ctx.fillRect(x + towerW * 0.65, baseY - towerH * 1.2, towerW * 0.35, towerH * 1.2);
-
-    ctx.fillStyle = tones[0];
-  }
-}
-
-function drawGround(region) {
-  const w = canvas.width;
-  const h = canvas.height;
-  const baseY = h * 0.82;
-
-  const colors = {
-    desert: "#c69a5a",
-    plains: "#4c703f",
-    hills: "#406b46",
-    coast: "#3b6755"
-  };
-
-  ctx.fillStyle = colors[region] || "#4c703f";
-  ctx.fillRect(0, baseY, w, h - baseY);
-}
 
 function drawRoad() {
   const w = canvas.width;
@@ -319,21 +189,6 @@ function drawTruck() {
   const dh = truckLoaded ? truckImg.height * scale : 90;
   const y = roadTop - dh * 0.45 + bounce;
 
-  // trailer
-  const trailerW = dw * 0.9;
-  const trailerH = dh * 0.45;
-  const trailerX = baseX - trailerW * 0.75;
-  const trailerY = roadTop - trailerH - 6;
-  const trailerGrad = ctx.createLinearGradient(trailerX, trailerY, trailerX, trailerY + trailerH);
-  trailerGrad.addColorStop(0, "#d8dce2");
-  trailerGrad.addColorStop(1, "#a9afb8");
-  ctx.fillStyle = trailerGrad;
-  ctx.fillRect(trailerX, trailerY, trailerW, trailerH);
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.fillRect(trailerX, trailerY + trailerH - 8, trailerW, 8);
-  ctx.fillStyle = "#e9edf3";
-  ctx.fillRect(trailerX + 10, trailerY + 10, trailerW - 20, 5);
-
   // truck cab or sprite
   if (truckLoaded) {
     ctx.drawImage(truckImg, baseX, y, dw, dh);
@@ -347,25 +202,25 @@ function drawTruck() {
     ctx.fillRect(baseX + dw * 0.55, y + dh * 0.2, dw * 0.35, dh * 0.25);
   }
 
-  // wheels
-  const wheelY = roadTop - 10;
-  const wheelPositions = [
-    baseX + dw * 0.18,
-    baseX + dw * 0.48,
-    trailerX + trailerW * 0.3,
-    trailerX + trailerW * 0.65
-  ];
-  ctx.fillStyle = "#111";
-  wheelPositions.forEach(wx => {
-    ctx.beginPath();
-    ctx.arc(wx, wheelY, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ccc";
-    ctx.beginPath();
-    ctx.arc(wx, wheelY, 5, 0, Math.PI * 2);
-    ctx.fill();
+  // wheels (only for placeholder draw)
+  if (!truckLoaded) {
+    const wheelY = roadTop - 10;
+    const wheelPositions = [
+      baseX + dw * 0.18,
+      baseX + dw * 0.48
+    ];
     ctx.fillStyle = "#111";
-  });
+    wheelPositions.forEach(wx => {
+      ctx.beginPath();
+      ctx.arc(wx, wheelY, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ccc";
+      ctx.beginPath();
+      ctx.arc(wx, wheelY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#111";
+    });
+  }
 }
 
 // --- Weather overlay ---------------------------------------------
@@ -378,48 +233,37 @@ function drawWeatherOverlay() {
 
   if (weather === "rain" || weather === "storm") {
     ctx.save();
-    ctx.globalAlpha = weather === "storm" ? 0.35 : 0.25;
-    ctx.fillStyle = "#1b2b3a";
-    ctx.fillRect(0, 0, w, h);
-
-    ctx.globalAlpha = 0.6;
-    ctx.strokeStyle = "rgba(200,220,255,0.8)";
+    ctx.globalAlpha = weather === "storm" ? 0.32 : 0.25;
+    ctx.strokeStyle = "rgba(200,220,255,0.7)";
     ctx.lineWidth = 1;
-
     const t = performance.now() / 16;
     for (let i = 0; i < 80; i++) {
       const x = ((i * 37) + t) % w;
       const y = ((i * 97) + t * 4) % h;
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.lineTo(x + 6, y + 14);
+      ctx.lineTo(x + 6, y + 12);
       ctx.stroke();
     }
-
     ctx.restore();
-
-    if (weather === "storm" && Math.random() < 0.02) {
-      ctx.save();
-      ctx.globalAlpha = 0.55;
-      ctx.fillStyle = "#f7f7ff";
-      ctx.fillRect(0, 0, w, h * 0.6);
-      ctx.restore();
-    }
   } else if (weather === "snow") {
     ctx.save();
-    ctx.globalAlpha = 0.5;
-    ctx.fillStyle = "rgba(255,255,255,0.05)";
-    ctx.fillRect(0, 0, w, h);
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.85;
     ctx.fillStyle = "#FFFFFF";
     const t = performance.now() / 40;
     for (let i = 0; i < 70; i++) {
       const x = ((i * 53) + t) % w;
       const y = ((i * 89) + t * 1.5) % h;
-      ctx.beginPath();
-      ctx.arc(x, y, 2, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(x, y, 2, 2);
     }
+    ctx.restore();
+  } else if (weather === "fog") {
+    ctx.save();
+    const fog = ctx.createLinearGradient(0, 0, 0, h);
+    fog.addColorStop(0, "rgba(255,255,255,0.08)");
+    fog.addColorStop(1, "rgba(255,255,255,0.22)");
+    ctx.fillStyle = fog;
+    ctx.fillRect(0, 0, w, h);
     ctx.restore();
   }
 }
@@ -635,47 +479,6 @@ function drawCityLayer() {
   ctx.fillStyle = "#A9FFBF";
   ctx.font = "14px monospace";
   ctx.fillText("Press R to refuel while in city.", 70, 145 + jobs.length * 28 + 40);
-}
-
-function drawDotMinigameOverlay() {
-  const state = window.getDotMiniState ? window.getDotMiniState() : null;
-  if (!state) return;
-
-  const { checks, index, timer, score } = state;
-  const w = canvas.width;
-  const h = canvas.height;
-
-  ctx.fillStyle = "rgba(0,0,0,0.8)";
-  ctx.fillRect(w * 0.1, h * 0.18, w * 0.8, h * 0.55);
-  ctx.strokeStyle = "#FFFFFF";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(w * 0.1, h * 0.18, w * 0.8, h * 0.55);
-
-  ctx.fillStyle = "#FFE066";
-  ctx.font = "22px monospace";
-  ctx.fillText("DOT INSPECTION", w * 0.18, h * 0.25);
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "14px monospace";
-  ctx.fillText("Press the correct keys before the timer runs out.", w * 0.18, h * 0.30);
-  ctx.fillText("L=Logs  T=Tires  G=Lights  B=Brakes  P=Paperwork  S=Securement",
-               w * 0.18, h * 0.34);
-
-  const remaining = Math.max(0, timer).toFixed(1);
-  ctx.fillText("Time remaining: " + remaining + "s", w * 0.40, h * 0.40);
-  ctx.fillText("Checks completed: " + score + " / " + checks.length,
-               w * 0.40, h * 0.44);
-
-  const current = checks[index] || null;
-  if (current) {
-    ctx.fillStyle = "#A9FFBF";
-    ctx.font = "18px monospace";
-    ctx.fillText(
-      "Current check: " + current.label + " (press '" + current.key + "')",
-      w * 0.18,
-      h * 0.52
-    );
-  }
 }
 
 // ===========================================================

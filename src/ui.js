@@ -7,17 +7,11 @@ console.log("%c[UI] Loaded.", "color:#5F5;");
 let hoveredUpgrade = null;
 
 function drawUILayer() {
+    return; // HUD handled in render.js; avoid duplicate labels
     const state = window.getGameState();
 
     if (state === "START") {
         drawStartScreen();
-        return;
-    }
-
-    if (state === "DOT_MINIGAME") {
-        drawHudPanel();
-        drawHudStats();
-        drawDotMinigameOverlay();
         return;
     }
 
@@ -110,9 +104,6 @@ function drawBar(x, y, w, label, value, color) {
 }
 
 // DOT OVERLAY RETURNS UNCHANGED
-function drawDotMinigameOverlay() {
-    // unchanged — paste your existing code here
-}
 
 // START SCREEN
 function drawStartScreen() {
