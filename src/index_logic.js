@@ -1,6 +1,7 @@
 (function () {
   let listenersAttached = false;
   let refuelBtn = null;
+  let startTapAttached = false;
 
   function isMobile() {
     return window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
@@ -59,9 +60,24 @@
     listenersAttached = !!(mainMenuBtn || challengeBtn || refuelBtn);
   }
 
+  function attachStartTap() {
+    if (startTapAttached) return;
+    const tapHandler = (e) => {
+      const state = typeof window.getGameState === "function" ? window.getGameState() : "START";
+      if (state === "START") {
+        const evt = new KeyboardEvent("keydown", { key: "Enter", bubbles: true });
+        window.dispatchEvent(evt);
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("pointerdown", tapHandler, { passive: false });
+    startTapAttached = true;
+  }
+
   function tick() {
     attachHandlers();
     toggleRefuel();
+    attachStartTap();
   }
 
   document.addEventListener("DOMContentLoaded", () => {
