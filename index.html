@@ -48,27 +48,29 @@
       max-height: 100vh;
     }
 
-    .touch-controls {
+    #mobile-controls {
       position: absolute;
-      inset: 0;
+      inset: auto 0 0 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-end;
-      gap: 12px;
-      padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 16px)) 16px;
+      gap: 10px;
+      padding: 10px 12px calc(18px + env(safe-area-inset-bottom, 12px)) 12px;
       box-sizing: border-box;
-      background: linear-gradient(180deg, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.4) 100%);
+      pointer-events: none;
+      z-index: 18;
     }
 
-    .touch-row {
+    .mobile-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
+      pointer-events: auto;
     }
 
-    .touch-btn {
+    .mobile-btn {
       min-width: 110px;
-      padding: 12px 16px;
+      padding: 12px 14px;
       border-radius: 12px;
       background: var(--control-bg);
       color: var(--control-text);
@@ -81,15 +83,15 @@
       touch-action: manipulation;
     }
 
-    .touch-btn:active,
-    .touch-btn.pressed {
+    .mobile-btn:active,
+    .mobile-btn.pressed {
       background: var(--control-active);
       color: #000;
       border-color: #3dd185;
     }
 
     @media (pointer: fine) {
-      .touch-controls {
+      #mobile-controls {
         display: none;
       }
     }
@@ -313,18 +315,17 @@
     <!-- The main game canvas -->
     <canvas id="game" width="960" height="540"></canvas>
 
-    <div class="touch-controls" aria-label="Mobile controls">
-      <div class="touch-row">
-        <button class="touch-btn" data-key="Enter" aria-label="Start game">Start</button>
-        <button class="touch-btn" data-key="r" aria-label="Refuel in city">Refuel</button>
+    <div id="mobile-controls" aria-label="Mobile controls">
+      <div class="mobile-row">
+        <button class="mobile-btn" data-key="Enter" aria-label="Start game">Start</button>
+        <button class="mobile-btn" data-key="r" aria-label="Refuel in city">Refuel</button>
+        <button class="mobile-btn" data-key="g" aria-label="Open garage">Garage</button>
       </div>
-      <div class="touch-row">
-        <button class="touch-btn" data-key="1" aria-label="Select job 1">Job 1</button>
-        <button class="touch-btn" data-key="2" aria-label="Select job 2">Job 2</button>
-      </div>
-      <div class="touch-row">
-        <button class="touch-btn" data-key="3" aria-label="Select job 3">Job 3</button>
-        <button class="touch-btn" data-key="4" aria-label="Select job 4">Job 4</button>
+      <div class="mobile-row">
+        <button class="mobile-btn" data-key="1" aria-label="Select job 1">Job 1</button>
+        <button class="mobile-btn" data-key="2" aria-label="Select job 2">Job 2</button>
+        <button class="mobile-btn" data-key="3" aria-label="Select job 3">Job 3</button>
+        <button class="mobile-btn" data-key="4" aria-label="Select job 4">Job 4</button>
       </div>
     </div>
 

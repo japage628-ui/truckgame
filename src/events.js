@@ -87,7 +87,9 @@ function triggerBonus(){
 // Mobile touch controls -> synthetic keys
 // ------------------------------------------
 (function setupMobileTouchControls() {
-  const buttons = document.querySelectorAll(".touch-controls button[data-key]");
+  const container = document.getElementById("mobile-controls");
+  if (!container) return;
+  const buttons = container.querySelectorAll("button[data-key]");
   if (!buttons.length) return;
 
   const activeKeys = new Set();
