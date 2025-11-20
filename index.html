@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Truck Game</title>
+  <link rel="manifest" href="manifest.json" />
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #000;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- The main game canvas -->
+  <canvas id="game" width="960" height="540"></canvas>
+
+  <!-- ========================================================= -->
+  <!--  LOAD ORDER (DO NOT TOUCH unless we update engine again) -->
+  <!-- ========================================================= -->
+
+  <!-- 1. Static data for cities, regions, distances -->
+  <script src="src/data.js"></script>
+
+  <!-- 2. World map logic (city coordinates, region assignment) -->
+  <script src="src/worldmap.js"></script>
+
+  <!-- 3. Core game engine (fuel, DOT, jobs, driving loop, weather) -->
+  <script src="src/engine.js"></script>
+
+  <!-- 4. Random event system (breakdowns, DOT events, weather spikes) -->
+  <script src="src/events.js"></script>
+
+  <!-- 5. UI code (HUD, tooltips, city popups, upgrade hover, panels) -->
+  <script src="src/ui.js"></script>
+
+  <!-- 6. Render pipeline (sky, road, truck, mountains, weather graphics) -->
+  <script src="src/render.js"></script>
+
+  <!-- ========================================================= -->
+  <!--  SERVICE WORKER (PWA SUPPORT)                            -->
+  <!-- ========================================================= -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js")
+          .then(reg => console.log("SW registered:", reg.scope))
+          .catch(err => console.warn("SW failed:", err));
+      });
+    }
+  </script>
+
+</body>
+</html>
