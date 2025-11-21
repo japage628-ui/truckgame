@@ -10,6 +10,9 @@ window.__setGameStateFromDot = (state) => {
     gameState = state;
   }
 };
+window.__setGameState = (state) => {
+  gameState = state;
+};
 
 const cities = window.GameData.cities;
 let currentCityId = 0;
@@ -20,6 +23,12 @@ window.setCurrentCity = (id) => {
   if (id >= 0 && id < cities.length) currentCityId = id;
   syncMiniMapToCity();
 };
+window.__setTripOriginCityId = (id) => {
+  if (Number.isFinite(id) && id >= 0 && id < cities.length) {
+    tripOriginCityId = id;
+  }
+};
+window.__getTripOriginCityId = () => tripOriginCityId;
 
 function syncMiniMapToCity() {
   const city = cities && cities[currentCityId];
@@ -31,6 +40,10 @@ function syncMiniMapToCity() {
 // World scroll
 let worldScroll = 0;
 window.getWorldScroll = () => worldScroll;
+window.__breakdownActive = false;
+window.__setWorldScroll = (v) => {
+  if (Number.isFinite(v)) worldScroll = v;
+};
 
 // ---------------- PLAYER STATS ----------------
 let stats = {
@@ -45,6 +58,14 @@ let stats = {
 };
 window.getPlayerStats = () => stats;
 window.getWeather = () => stats.activeWeather;
+window.__setStats = (data) => {
+  if (!data) return;
+  Object.keys(stats).forEach((k) => {
+    if (k in data && Number.isFinite(data[k])) {
+      stats[k] = data[k];
+    }
+  });
+};
 
 // ---------------- UPGRADES ----------------
 let upgrades = {
@@ -60,6 +81,15 @@ let upgrades = {
 };
 const UPGRADE_STORAGE_KEY = "truckgame_upgrades_v1";
 window.getUpgrades = () => upgrades;
+window.__setUpgrades = (data) => {
+  if (!data) return;
+  Object.keys(upgrades).forEach((k) => {
+    if (k in data && Number.isFinite(data[k])) {
+      upgrades[k] = data[k];
+    }
+  });
+  applyUpgradeEffects();
+};
 
 function loadUpgradesFromStorage() {
   try {
@@ -158,6 +188,19 @@ window.getProgressPercent = () => {
   const pct = 100 - (jobRemaining / activeJob.distanceTotal) * 100;
   return Math.min(100, Math.max(0, pct));
 };
+window.__getJobState = () => ({
+  activeJob,
+  jobRemaining,
+  tripOriginCityId
+});
+
+window.__applyJobState = (data) => {
+  activeJob = data?.activeJob || null;
+  jobRemaining = Number(data?.jobRemaining) || 0;
+  if (Number.isFinite(data?.tripOriginCityId)) {
+    tripOriginCityId = data.tripOriginCityId;
+  }
+};
 
 function makeJobsForCity(cityId) {
   const jobs = [];
@@ -199,6 +242,9 @@ window.startJob = (job) => {
   if (typeof window.resetEventTimer === "function") {
     window.resetEventTimer();
   }
+  if (typeof window.autoSaveSlot === "function") {
+    window.autoSaveSlot();
+  }
 };
 
 window.__returnToMainMenu = () => {
@@ -208,8 +254,78 @@ window.__returnToMainMenu = () => {
   setMessage("Welcome back!", 2);
 };
 
+window.__abandonActiveJob = (reason = "Trip cancelled.") => {
+  activeJob = null;
+  jobRemaining = 0;
+  currentCityId = tripOriginCityId;
+  cachedJobs = makeJobsForCity(currentCityId);
+  syncMiniMapToCity();
+  window.__dotViolationThisJob = false;
+  gameState = "CITY";
+  window.__breakdownActive = false;
+  setMessage(reason, 3);
+  if (typeof window.autoSaveSlot === "function") {
+    window.autoSaveSlot();
+  }
+};
+
+window.__getCoreSave = () => {
+  return {
+    gameState,
+    currentCityId,
+    tripOriginCityId,
+    worldScroll,
+    stats: { ...stats },
+    upgrades: { ...upgrades },
+    job: { activeJob, jobRemaining, tripOriginCityId },
+    cachedJobs
+  };
+};
+
+window.__applyCoreSave = (data) => {
+  if (!data) return;
+  if (typeof data.currentCityId === "number") {
+    currentCityId = Math.max(0, Math.min(cities.length - 1, data.currentCityId));
+  }
+  if (typeof data.tripOriginCityId === "number") {
+    tripOriginCityId = Math.max(0, Math.min(cities.length - 1, data.tripOriginCityId));
+  }
+  if (typeof data.worldScroll === "number") {
+    worldScroll = data.worldScroll;
+  }
+  if (data.stats) {
+    Object.keys(stats).forEach((k) => {
+      if (k in data.stats) stats[k] = data.stats[k];
+    });
+  }
+  if (data.upgrades) {
+    Object.keys(upgrades).forEach((k) => {
+      if (k in data.upgrades) upgrades[k] = data.upgrades[k];
+    });
+  }
+  applyUpgradeEffects();
+
+  if (data.job) {
+    activeJob = data.job.activeJob || null;
+    jobRemaining = Number(data.job.jobRemaining) || 0;
+    if (typeof data.job.tripOriginCityId === "number") {
+      tripOriginCityId = Math.max(0, Math.min(cities.length - 1, data.job.tripOriginCityId));
+    }
+  }
+  if (data.cachedJobs && Array.isArray(data.cachedJobs)) {
+    cachedJobs = data.cachedJobs;
+  } else {
+    cachedJobs = makeJobsForCity(currentCityId);
+  }
+  syncMiniMapToCity();
+  if (typeof data.gameState === "string") {
+    gameState = data.gameState;
+  }
+};
+
 // ---------------- DRIVING UPDATE ----------------
 function handleDriving(dt) {
+  if (window.__lizardActive || window.__breakdownActive) return;
   if (!activeJob) return;
 
   // speed based on upgrades
@@ -268,6 +384,9 @@ function handleDriving(dt) {
     activeJob = null;
     jobRemaining = 0;
     gameState = "CITY";
+    if (typeof window.autoSaveSlot === "function") {
+      window.autoSaveSlot();
+    }
   }
 }
 
@@ -275,6 +394,9 @@ function handleDriving(dt) {
 function update(dt) {
   if (typeof window.Challenges?.tickMoney === "function") {
     window.Challenges.tickMoney();
+  }
+  if (typeof window.updateBreakdown === "function") {
+    window.updateBreakdown(dt);
   }
   if (messageTimer > 0) {
     messageTimer -= dt;

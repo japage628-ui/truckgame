@@ -53,11 +53,11 @@ function triggerRandomEvent(){
 // DOT
 function triggerDOT(){
   window.setMessage("Random DOT check!",2);
-  if (typeof window.startDotWheel === "function") {
+  if (typeof window.spawnLizard === "function") {
     if (typeof window.__setGameStateFromDot === "function") {
       window.__setGameStateFromDot("CITY");
     }
-    setTimeout(() => window.startDotWheel(), 0);
+    setTimeout(() => window.spawnLizard(), 0);
   }
 }
 

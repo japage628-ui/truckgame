@@ -1,4 +1,6 @@
 // minimap.js - lightweight mini-map overlay for truck position
+const usaMap = new Image();
+usaMap.src = "assets/maps/usa_map.png";
 
 (function () {
   function init() {
@@ -16,17 +18,15 @@
   const MAX_LON = -66;
   const MIN_LAT = 24;
   const MAX_LAT = 50;
-  let mapReady = false;
-  const mapImg = new Image();
-  mapImg.onload = () => {
+  let mapReady = usaMap.complete && usaMap.naturalWidth > 0;
+  usaMap.onload = () => {
     mapReady = true;
     redraw();
   };
-  mapImg.onerror = () => {
+  usaMap.onerror = () => {
     mapReady = false;
     redraw();
   };
-  mapImg.src = "assets/icons/usa_map.png";
 
   let lastLat = null;
   let lastLon = null;
@@ -45,33 +45,21 @@
     return { x, y };
   }
 
-  function drawPlaceholder() {
-    ctx.fillStyle = "rgba(255,255,255,0.05)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "rgba(255,255,255,0.35)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = "700 14px monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("USA MAP", canvas.width / 2, canvas.height / 2);
-  }
-
   function drawMapBase() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (mapReady) {
-      const scale = Math.min(canvas.width / mapImg.width, canvas.height / mapImg.height);
-      const drawW = mapImg.width * scale;
-      const drawH = mapImg.height * scale;
+      const scale = Math.min(canvas.width / usaMap.width, canvas.height / usaMap.height);
+      const drawW = usaMap.width * scale;
+      const drawH = usaMap.height * scale;
       const dx = (canvas.width - drawW) / 2;
       const dy = (canvas.height - drawH) / 2;
       ctx.globalAlpha = 0.9;
-      ctx.drawImage(mapImg, dx, dy, drawW, drawH);
+      ctx.drawImage(usaMap, dx, dy, drawW, drawH);
       ctx.globalAlpha = 1;
-    } else {
-      drawPlaceholder();
     }
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
   }
 
   function drawDot() {

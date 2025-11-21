@@ -83,9 +83,6 @@ function gameLoop(ts) {
   if (typeof window.update === "function") {
     window.update(dt);
   }
-  if (typeof window.updateDotWheel === "function") {
-    window.updateDotWheel(dt);
-  }
 
   drawFrame();
   requestAnimationFrame(gameLoop);
@@ -98,6 +95,15 @@ function drawFrame() {
 
   // always draw background world
   drawWorldLayer();
+
+  if (typeof drawMinimap === "function") {
+    const tx = window.getWorldScroll ? window.getWorldScroll() : 0;
+    const truckPos = {
+      x: Math.max(0, Math.min(5000, tx)),
+      y: 0
+    };
+    drawMinimap(ctx, truckPos);
+  }
 
   if (state === "START") {
     drawStartScreen();
@@ -288,19 +294,8 @@ function drawHudPanel() {
 }
 
 function drawGarageButton() {
-  garageBtnRect.w = 28;
-  garageBtnRect.h = 28;
-  garageBtnRect.x = hudPanel.x + hudPanel.w - garageBtnRect.w - 10;
-  garageBtnRect.y = hudPanel.y + 10;
-
-  ctx.fillStyle = garageOpen ? "#2fa36a" : "#1c1c1c";
-  ctx.fillRect(garageBtnRect.x, garageBtnRect.y, garageBtnRect.w, garageBtnRect.h);
-  ctx.strokeStyle = "#FFFFFF";
-  ctx.strokeRect(garageBtnRect.x, garageBtnRect.y, garageBtnRect.w, garageBtnRect.h);
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "16px monospace";
-  ctx.fillText("G", garageBtnRect.x + 8, garageBtnRect.y + 19);
+  // Hidden: garage now accessed via side menu
+  garageBtnRect = { x: 0, y: 0, w: 0, h: 0 };
 }
 
 function drawHudStats() {
@@ -470,9 +465,14 @@ function drawGarageMenu() {
         y: lineY - 16,
         w: menuW - 16,
         h: itemH - 6
-      });
-    }
+    });
   }
+}
+
+// expose garage toggle for UI shortcuts
+window.toggleGarageMenu = () => {
+  garageOpen = !garageOpen;
+};
 }
 
 // ===========================================================

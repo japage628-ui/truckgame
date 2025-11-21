@@ -36,6 +36,15 @@
         midground: "assets/Backgrounds/cityskyline.png",
         foreground: "assets/Backgrounds/cityskyline.png"
       }
+    },
+    {
+      name: "desert_default",
+      region: "desert",
+      layers: {
+        background: "assets/Backgrounds/dessert.jpg",
+        midground: "assets/Backgrounds/dessert.jpg",
+        foreground: "assets/Backgrounds/cityskyline.png"
+      }
     }
   ];
 

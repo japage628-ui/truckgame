@@ -16,7 +16,8 @@
       clean_10: 0,
       cash_50000: 0
     },
-    completed: {}
+    completed: {},
+    claimed: {}
   });
 
   let state = load();
@@ -33,7 +34,8 @@
       const parsed = JSON.parse(raw);
       return {
         progress: { ...defaultState().progress, ...(parsed.progress || {}) },
-        completed: parsed.completed || {}
+        completed: parsed.completed || {},
+        claimed: parsed.claimed || {}
       };
     } catch (e) {
       console.warn("[Challenges] failed to load", e);
@@ -73,9 +75,8 @@
     if (!ch || state.completed[id]) return;
     if (state.progress[id] >= ch.target) {
       state.completed[id] = true;
-      grantReward(ch.reward);
       save();
-      showPopup(`Challenge complete: ${ch.name}! Reward: ${ch.reward.money ? "$" + ch.reward.money : "bonus"}`);
+      showPopup(`Challenge ready: ${ch.name}! Claim your reward.`);
       renderList();
     }
   }
@@ -124,7 +125,7 @@
       const rewardText = ch.reward?.money ? `Reward: $${ch.reward.money}` : "Reward available";
       item.innerHTML = `
         <div><strong>${ch.name}</strong></div>
-        <div>${progress.toFixed(0)} / ${ch.target} — ${rewardText}</div>
+        <div>${progress.toFixed(0)} / ${ch.target} - ${rewardText}</div>
         <div class="challenge-progress"><span style="width:${pct}%"></span></div>
         ${state.completed[ch.id] ? "<div style='color:#3dd185;'>Completed</div>" : ""}
       `;
@@ -146,10 +147,38 @@
   }
 
   function setupUI() {
-    const btn = document.getElementById("challenge-btn");
-    if (btn) btn.addEventListener("click", openModal);
     const close = document.getElementById("challenge-close-btn");
     if (close) close.addEventListener("click", closeModal);
+  }
+
+  function listChallenges() {
+    return CHALLENGES.map((ch) => {
+      const progress = Math.min(state.progress[ch.id] || 0, ch.target);
+      const pct = Math.min(100, (progress / ch.target) * 100);
+      return {
+        id: ch.id,
+        name: ch.name,
+        target: ch.target,
+        progress,
+        pct,
+        reward: ch.reward,
+        completed: !!state.completed[ch.id],
+        claimed: !!state.claimed[ch.id]
+      };
+    });
+  }
+
+  function claimReward(id) {
+    const ch = CHALLENGES.find(c => c.id === id);
+    if (!ch) return { ok: false, reason: "missing" };
+    if (!state.completed[id]) return { ok: false, reason: "not_completed" };
+    if (state.claimed[id]) return { ok: false, reason: "already_claimed" };
+    grantReward(ch.reward);
+    state.claimed[id] = true;
+    save();
+    showPopup(`Reward claimed: ${ch.reward?.money ? "$" + ch.reward.money : "bonus"}`);
+    renderList();
+    return { ok: true };
   }
 
   // observe money increases without altering core logic
@@ -167,7 +196,21 @@
     recordMiles: (d) => { recordMiles(d); save(); },
     recordJobComplete: (clean) => { recordJobComplete(clean); save(); },
     recordViolation: () => { recordViolation(); save(); },
-    tickMoney: trackMoneyDelta
+    tickMoney: trackMoneyDelta,
+    list: listChallenges,
+    claim: claimReward,
+    exportState: () => ({ ...state }),
+    importState: (data) => {
+      if (data) {
+        state = {
+          progress: { ...defaultState().progress, ...(data.progress || {}) },
+          completed: data.completed || {},
+          claimed: data.claimed || {}
+        };
+        save();
+        renderList();
+      }
+    }
   };
 
   // init

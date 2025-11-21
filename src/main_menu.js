@@ -175,15 +175,19 @@
     saveSlots(slots);
   }
 
+  function resetState() {
+    if (typeof window.__returnToMainMenu === "function") {
+      window.__returnToMainMenu();
+    }
+    if (typeof window.__applyCoreSave === "function") {
+      const fresh = initialSnapshot || currentSnapshot();
+      if (fresh) window.__applyCoreSave({ ...fresh, gameState: "CITY" });
+    }
+  }
+
   function handleNewGame() {
     setActiveSlot(0);
-    if (initialSnapshot) {
-      const stats = window.getPlayerStats?.();
-      if (stats) applyStats(stats, initialSnapshot.stats);
-      if (typeof window.setCurrentCity === "function" && Number.isFinite(initialSnapshot.cityId)) {
-        window.setCurrentCity(initialSnapshot.cityId);
-      }
-    }
+    resetState();
     closeMenus();
   }
 
@@ -240,9 +244,16 @@
 
   function wireButtons() {
     $("btn-new-game")?.addEventListener("click", handleNewGame);
+    $("btn-resume-game")?.addEventListener("click", () => {
+      closeMenus();
+    });
     $("btn-load-game")?.addEventListener("click", () => {
-      renderSlots();
-      showOverlay("load-menu-overlay");
+      if (typeof window.showSaveLoadPanel === "function") {
+        window.showSaveLoadPanel();
+      } else {
+        renderSlots();
+        showOverlay("load-menu-overlay");
+      }
     });
     $("btn-settings")?.addEventListener("click", () => showOverlay("settings-overlay"));
     $("btn-credits")?.addEventListener("click", () => showOverlay("credits-overlay"));

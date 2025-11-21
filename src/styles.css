@@ -145,7 +145,7 @@
     }
 
     /* Mini-map overlay */
-    #mini-map-container {
+#mini-map-container {
       position: absolute;
       top: 12px;
       left: 12px;
@@ -167,35 +167,7 @@
     }
 
     #main-menu-btn {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 6px 10px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      border-radius: 6px;
-      background: rgba(0, 0, 0, 0.7);
-      color: #fff;
-      font-family: monospace;
-      font-size: 12px;
-      cursor: pointer;
-      z-index: 30;
-    }
-
-    #mobile-refuel-btn {
-      position: absolute;
-      right: 16px;
-      top: 290px;
-      padding: 10px 14px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.75);
-      color: #fff;
-      font-family: monospace;
-      font-size: 14px;
-      cursor: pointer;
-      z-index: 25;
-      display: none;
+      display: none !important;
     }
 
     /* Job board */
@@ -214,26 +186,24 @@
       display: none;
     }
 
-    .job-board-panel {
-      background: rgba(0,0,0,0.65);
-      background-image: url("assets/job_board_mockup/Job_board_mockup.PNG");
-      background-size: cover;
-      background-position: center;
-      background-blend-mode: multiply;
-      border: 3px solid #fff;
+    #job_board_container .job-board-panel,
+    #job-list-panel .job-board-panel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 420px;
+      max-width: 90%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      background: rgba(0,0,0,0.75);
+      border: 2px solid #0ff;
       border-radius: 8px;
-      padding: 20px;
-      max-width: 80vw;
-      width: 100%;
-      pointer-events: auto;
-      color: #fff;
-      font-family: monospace;
-      box-sizing: border-box;
+      padding: 16px;
     }
 
     @media (min-width: 900px) {
       .job-board-panel {
-        max-width: 55vw;
+        max-width: 50vw;
       }
     }
 
@@ -308,6 +278,31 @@
       color: #00ffaa;
     }
 
+#job_board_container .job-board-window {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 420px;
+  max-width: 90%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  border: 2px solid #0ff;
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 40;
+}
+
+.job-entry {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.job-select-btn {
+  float: right;
+  margin-top: 6px;
+}
+
     .job-board-panel .job-list::-webkit-scrollbar {
       width: 8px;
     }
@@ -379,6 +374,312 @@
       transform: scale(0.98);
       background: rgba(255,255,255,0.12);
     }
+
+    /* Breakdown modal */
+    .breakdown-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.78);
+      z-index: 200;
+    }
+
+    .breakdown-overlay.visible {
+      display: flex;
+    }
+
+    .breakdown-panel {
+      width: min(420px, 90vw);
+      background: rgba(0,0,0,0.9);
+      border: 3px solid #fff;
+      border-radius: 10px;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.65);
+      color: #fff;
+      font-family: monospace;
+      padding: 18px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .breakdown-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      cursor: pointer;
+      font-family: monospace;
+      font-weight: 700;
+    }
+
+    .breakdown-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .breakdown-desc {
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .breakdown-cost {
+      font-size: 14px;
+      color: #9cf2c1;
+    }
+
+    .breakdown-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .breakdown-btn {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 2px solid #888;
+      background: rgba(25,25,25,0.9);
+      color: #fff;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 14px;
+      transition: border-color 0.08s ease-out, color 0.08s ease-out;
+    }
+
+    .breakdown-btn.pay:hover,
+    .breakdown-btn.pay:active {
+      border-color: #00ffaa;
+      color: #00ffaa;
+    }
+
+    .breakdown-btn.abandon:hover,
+    .breakdown-btn.abandon:active {
+      border-color: #ff6b6b;
+      color: #ff6b6b;
+    }
+
+    /* Save / Load panel */
+    .save-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.78);
+      z-index: 190;
+    }
+
+    .save-overlay.visible {
+      display: flex;
+    }
+
+    .save-panel {
+      width: min(520px, 92vw);
+      background: rgba(0,0,0,0.9);
+      border: 3px solid #fff;
+      border-radius: 10px;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.65);
+      color: #fff;
+      font-family: monospace;
+      padding: 18px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .save-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      cursor: pointer;
+      font-family: monospace;
+      font-weight: 700;
+    }
+
+    .save-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .save-slots {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .save-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .save-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+    }
+
+    .save-label {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .save-status {
+      color: #cfe9ff;
+      line-height: 1.3;
+    }
+
+    .save-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .save-btn {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 2px solid #888;
+      background: rgba(25,25,25,0.9);
+      color: #fff;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 13px;
+      min-width: 120px;
+      transition: border-color 0.08s ease-out, color 0.08s ease-out;
+    }
+
+    .save-btn:hover,
+    .save-btn:active {
+      border-color: #00ffaa;
+      color: #00ffaa;
+    }
+
+    /* Side menu */
+      position: fixed;
+      top: 0;
+      left: -220px;
+      width: 200px;
+      height: 100vh;
+      background: linear-gradient(180deg, rgba(15,15,15,0.95), rgba(20,20,20,0.9));
+      border-right: 3px solid #fff;
+      box-shadow: 10px 0 24px rgba(0,0,0,0.45);
+      z-index: 200;
+      padding: 16px 12px;
+      box-sizing: border-box;
+      transition: left 0.18s ease-out;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-family: monospace;
+    }
+
+    .side-menu-panel.open {
+      left: 0;
+    }
+
+    .side-menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .side-menu-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 2px solid #888;
+      background: rgba(25,25,25,0.9);
+      color: #fff;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 14px;
+      text-align: left;
+      transition: border-color 0.08s ease-out, color 0.08s ease-out;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .side-menu-item:hover,
+    .side-menu-item:active {
+      border-color: #00ffaa;
+      color: #00ffaa;
+    }
+
+    .side-menu-item.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #555;
+    }
+
+    .side-menu-icon-img {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    /* SIDE MENU BAR */
+    #side-menu {
+      position: absolute;
+      top: 140px;       /* directly under the minimap */
+      left: 10px;
+      width: 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 51;
+    }
+
+    .side-menu-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.7);
+      border: 2px solid #0ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .side-menu-icon {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+
+.menu-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  pointer-events: none;
+}
 
     .slot-list {
       display: flex;
@@ -455,6 +756,185 @@
     body.menu-open .game-shell {
       display: none;
     }
+
+    /* Challenges panel */
+    .challenges-panel-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.65);
+      z-index: 120;
+    }
+
+    .challenges-panel-overlay.visible {
+      display: flex;
+    }
+
+    .challenges-panel {
+      width: min(520px, 90vw);
+      max-height: 80vh;
+      background: rgba(0,0,0,0.85);
+      border: 3px solid #fff;
+      border-radius: 10px;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.55);
+      color: #fff;
+      font-family: monospace;
+      padding: 18px 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    .challenges-panel h3 {
+      margin: 0;
+      text-align: center;
+      font-size: 18px;
+      letter-spacing: 1px;
+    }
+
+    .challenges-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      cursor: pointer;
+      font-family: monospace;
+      font-weight: 700;
+    }
+
+    .challenges-list {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 60vh;
+    }
+
+    .challenge-row {
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .challenge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .challenge-name {
+      font-weight: 700;
+      color: #00ffcc;
+    }
+
+    .challenge-desc {
+      color: #cfe9ff;
+      font-size: 13px;
+    }
+
+    .challenge-progress-bar {
+      height: 10px;
+      border: 1px solid #fff;
+      border-radius: 6px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .challenge-progress-bar span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #2fa36a, #3dd185);
+    }
+
+    .challenge-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .challenge-claim-btn {
+      background: rgba(25,25,25,0.9);
+      border: 2px solid #888;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: monospace;
+      transition: border-color 0.08s ease, color 0.08s ease;
+    }
+
+    .challenge-claim-btn:hover,
+    .challenge-claim-btn:active {
+      border-color: #00ffaa;
+      color: #00ffaa;
+    }
+
+/* LIZARD MINI-GAME OVERLAY */
+.lizard-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 120;
+  background: rgba(0,0,0,0.35);
+}
+
+.lizard-overlay.visible {
+  display: flex;
+}
+
+.lizard-sprite {
+  width: 140px;
+  height: auto;
+  cursor: pointer;
+}
+
+.lizard-reward {
+  display: none;
+  background: rgba(0,0,0,0.8);
+  border: 2px solid #0f0;
+  padding: 12px;
+  margin-top: 20px;
+}
+
+.lizard-reward.visible {
+  display: block;
+}
+
+/* Background lizard sprite */
+.bg-lizard {
+  position: absolute;
+  bottom: 20px;
+  right: 40px;
+  width: 100px;
+  height: auto;
+  opacity: 0.85;
+  z-index: 5; /* behind HUD (HUD is ~10-20) */
+  pointer-events: none; /* cannot be clicked */
+}
+
+.bg-lizard.hidden {
+  display: none;
+}
 
 
     /* ==========================================
@@ -631,3 +1111,45 @@
         height: 220px;
       }
     }
+
+/* Job Board Drop-Down */
+#job-board-dropdown {
+    position: fixed;
+    top: -500px;
+    /* SAFE ZONE POSITIONING */
+    left: calc(50% - 100px); 
+    width: calc(100% - 350px); 
+    max-width: 650px;
+
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    transition: top 0.4s ease-in-out;
+    z-index: 9999;
+}
+
+#job-board-dropdown.open {
+    top: 20px;
+}
+
+.job-board-inner {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.job-board-inner h2 {
+    margin-top: 0;
+    text-align: center;
+}
+
+.job-item {
+    padding: 10px;
+    border-bottom: 1px solid #444;
+}
+
+.job-item button {
+    margin-top: 10px;
+}

@@ -2,6 +2,8 @@
   let listenersAttached = false;
   let refuelBtn = null;
   let startTapAttached = false;
+  let breakdownScriptLoaded = false;
+  let saveSystemLoaded = false;
 
   function isMobile() {
     return window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
@@ -13,26 +15,14 @@
   }
 
   function toggleRefuel() {
-    if (!refuelBtn) return;
-    if (!refuelBtn) return;
-    const state = window.getGameState ? window.getGameState() : "START";
-    const show = isMobile() && state === "CITY";
-    refuelBtn.style.display = show ? "block" : "none";
+    return;
   }
 
   function attachHandlers() {
     if (listenersAttached) return;
 
-    refuelBtn = document.getElementById("mobile-refuel-btn");
     const mainMenuBtn = document.getElementById("main-menu-btn");
     const challengeBtn = document.getElementById("challenge-btn");
-
-    if (refuelBtn) {
-      refuelBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        sendKey("r");
-      });
-    }
 
     if (mainMenuBtn) {
       mainMenuBtn.addEventListener("click", (e) => {
@@ -57,7 +47,25 @@
       });
     }
 
-    listenersAttached = !!(mainMenuBtn || challengeBtn || refuelBtn);
+    listenersAttached = !!(mainMenuBtn || challengeBtn);
+  }
+
+  function ensureBreakdownScript() {
+    if (breakdownScriptLoaded) return;
+    const script = document.createElement("script");
+    script.src = "src/breakdown.js";
+    script.async = false;
+    document.head.appendChild(script);
+    breakdownScriptLoaded = true;
+  }
+
+  function ensureSaveSystemScript() {
+    if (saveSystemLoaded) return;
+    const script = document.createElement("script");
+    script.src = "src/save_system.js";
+    script.async = false;
+    document.head.appendChild(script);
+    saveSystemLoaded = true;
   }
 
   function attachStartTap() {
@@ -74,18 +82,86 @@
     startTapAttached = true;
   }
 
-  function tick() {
-    attachHandlers();
-    toggleRefuel();
-    attachStartTap();
+function tick() {
+  attachHandlers();
+  toggleRefuel();
+  attachStartTap();
+  ensureBreakdownScript();
+  ensureSaveSystemScript();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  tick();
+  setInterval(tick, 500);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "j") {
+    const board = document.getElementById("job-board-dropdown");
+    board?.classList.toggle("open");
+  }
+});
+
+window.addEventListener("templates:loaded", tick);
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const mainIcon = document.getElementById("btn-mainmenu");
+  if (mainIcon) {
+    mainIcon.innerHTML = '<img src="assets/icons/home_icon.png" class="menu-icon">';
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    tick();
-    setInterval(tick, 500);
+  const jobsIcon = document.getElementById("btn-jobs");
+  if (jobsIcon) {
+    jobsIcon.innerHTML = '<img src="assets/icons/clipboard_icon.png" class="menu-icon">';
+  }
+
+  const settingsIcon = document.getElementById("btn-settings");
+  if (settingsIcon) {
+    settingsIcon.innerHTML = '<img src="assets/icons/gear_icon.png" class="menu-icon">';
+  }
+
+  const mapIcon = document.getElementById("btn-map");
+  if (mapIcon) {
+    mapIcon.innerHTML = '<img src="assets/icons/pin_icon.jpg" class="menu-icon">';
+  }
+
+  const btnMain = document.getElementById("btn-mainmenu");
+  const btnJobs = document.getElementById("btn-jobs");
+  const btnSet = document.getElementById("btn-settings");
+  const btnMap = document.getElementById("btn-map");
+
+  // Main Menu Panel
+  if (btnMain) btnMain.onclick = () => {
+    const menu = document.getElementById("start-screen-container");
+    if (menu) menu.classList.remove("hidden");
+  };
+
+  // Job Board
+  if (btnJobs) btnJobs.onclick = () => {
+    const jb = document.getElementById("job_board_container");
+    if (jb) jb.classList.toggle("hidden");
+  };
+
+  // Settings Overlay
+  if (btnSet) btnSet.onclick = () => {
+    const s = document.getElementById("settings-overlay");
+    if (s) s.classList.toggle("hidden");
+  };
+
+  // Minimap Toggle
+  if (btnMap) btnMap.onclick = () => {
+    const mm = document.getElementById("minimap-container");
+    if (mm) mm.classList.toggle("hidden");
+  };
+
+  // Refuel
+  const btnRefuel = document.getElementById("refuel-btn");
+  if (btnRefuel) btnRefuel.addEventListener("click", () => {
+    sendKey("r");
   });
 
-  window.addEventListener("templates:loaded", tick);
+});
 })();
 
 if ("serviceWorker" in navigator) {

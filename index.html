@@ -23,8 +23,18 @@
     <div id="job_board_container"></div>
 
     <div id="minimap-container"></div>
+    <!-- SIDE MENU -->
+    <div id="side-menu">
+      <div id="btn-mainmenu" class="side-menu-btn"><img src="assets/icons/home_icon.png" class="menu-icon" alt="Home"></div>
+      <div id="btn-jobs" class="side-menu-btn"><img src="assets/icons/clipboard_icon.png" class="menu-icon" alt="Jobs"></div>
+      <button id="refuel-btn" class="side-menu-btn">⛽</button>
+      <div id="btn-settings" class="side-menu-btn"></div>
+      <div id="btn-map" class="side-menu-btn"></div>
+    </div>
 
   </div>
+
+  <img id="bg-lizard" src="assets/lizard.png" class="bg-lizard hidden">
 
   <!-- Main Menu Overlay -->
   <div id="main-menu-overlay" class="menu-overlay visible" aria-label="Main menu">
@@ -33,6 +43,7 @@
       <div class="menu-buttons">
         <button id="btn-new-game" class="menu-btn" type="button">New Game</button>
         <button id="btn-load-game" class="menu-btn" type="button">Load Game</button>
+        <button id="btn-resume-game" class="menu-btn" type="button">Resume Game</button>
         <button id="btn-settings" class="menu-btn" type="button">Settings</button>
         <button id="btn-credits" class="menu-btn" type="button">Credits</button>
       </div>
@@ -87,35 +98,10 @@
     </div>
   </div>
 
-  <div id="dot-wheel-overlay" class="dot-hidden">
-    <div class="dot-panel">
-      <button id="dot-close-btn" type="button" aria-label="Close DOT wheel" style="position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:6px; border:1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.65); color:#fff; cursor:pointer; font-family: monospace; font-weight:700;">X</button>
-      <div class="dot-police-lights" aria-hidden="true">
-        <div class="dot-light red"></div>
-        <div class="dot-light blue"></div>
-      </div>
-      <div class="dot-header">
-        <span class="dot-title">DOT RANDOM INTERVENTION</span>
-        <span class="dot-sub">Automated Compliance Analyzer v4.1</span>
-      </div>
-      <div class="dot-content">
-        <canvas id="dot-wheel-canvas" width="320" height="320"></canvas>
-        <div class="dot-info">
-          <div id="dot-result-line">
-            Press SPIN to begin automated inspection...
-        </div>
-        <button id="dot-spin-btn">SPIN</button>
-        <div id="dot-reward-popup" style="display:none; margin-top:8px;">
-          <div id="dot-reward-text" style="margin-bottom:6px;">You won: </div>
-          <button id="dot-collect-btn" type="button">Collect</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div id="challenges-container"></div>
 
   <script src="src/load_templates.js"></script>
+  <script src="src/lizard_game.js"></script>
   <script src="src/index_logic.js"></script>
 
   <!-- ========================================================= -->
@@ -140,21 +126,21 @@
   <!-- 4. Random event system (breakdowns, DOT events, weather spikes) -->
   <script src="src/events.js"></script>
 
-  <!-- 4.5 DOT wheel overlay -->
-  <script src="src/dot_wheel.js"></script>
-
-  <!-- 4.6 Background rendering -->
+  <!-- 4.5 Background rendering -->
   <script src="src/render_background.js"></script>
 
-  <!-- 5. UI code (HUD, tooltips, city popups, upgrade hover, panels) -->
+  <!-- 5. Lizard mini-game -->
+  <script src="src/lizard_game.js"></script>
+
+  <!-- 6. UI code (HUD, tooltips, city popups, upgrade hover, panels) -->
   <script src="src/ui.js"></script>
 
-  <!-- 6. Render pipeline (sky, road, truck, mountains, weather graphics) -->
+  <!-- 7. Render pipeline (sky, road, truck, mountains, weather graphics) -->
   <script src="src/render.js"></script>
 
   <script src="src/main_menu.js"></script>
 
-  <!-- 7. Mini map overlay -->
+  <!-- 8. Mini map overlay -->
   <script src="src/minimap.js"></script>
 
   <!-- ========================================================= -->
